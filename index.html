@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UP e-District Link Generator Tool</title>
+    <title>UP e-District Encoder Tool</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -45,7 +45,7 @@
         }
         button {
             width: 100%;
-            background-color: #28a745;
+            background-color: #007bff;
             color: white;
             padding: 12px;
             border: none;
@@ -55,7 +55,7 @@
             font-weight: bold;
         }
         button:hover {
-            background-color: #218838;
+            background-color: #0056b3;
         }
         .result-box {
             margin-top: 25px;
@@ -66,7 +66,7 @@
             word-break: break-all;
         }
         .result-box a {
-            color: #007bff;
+            color: #28a745;
             text-decoration: none;
             font-weight: bold;
         }
@@ -78,51 +78,59 @@
 <body>
 
 <div class="container">
-    <h2>e-District Link Generator</h2>
+    <h2>e-District Link Encoder Tool</h2>
     
-    <label for="encodedInput">Base64 कोड पेस्ट करें:</label>
-    <input type="text" id="encodedInput" placeholder="उदा: MjYxOTAw...">
+    <label for="appNo">Application Number:</label>
+    <input type="text" id="appNo" placeholder="उदा: 261900010064472">
 
-    <button onclick="generateLink()">लिंक जेनरेट करें</button>
+    <label for="certNo">Certificate Number:</label>
+    <input type="text" id="certNo" placeholder="उदा: 602261007721">
+
+    <button onclick="generateEncodedLink()">Link Generate Karein</button>
 
     <div id="resultBox" class="result-box">
-        <p><strong>डिकोड किया गया नंबर:</strong> <span id="decodedNo"></span></p>
-        <p><strong>डायरेक्ट लिंक:</strong> <br>
-            <a id="finalLink" href="#" target="_blank">यहाँ क्लिक करें</a>
+        <p><strong>Combined Text:</strong> <span id="combinedText"></span></p>
+        <p><strong>Encoded Base64 Code:</strong> <br><code id="encodedCode" style="background:#fff; padding:2px 5px; border:1px solid #ddd;"></code></p>
+        <p><strong>Final Verification Link:</strong> <br>
+            <a id="finalLink" href="#" target="_blank">Yahan Click Karein</a>
         </p>
     </div>
 </div>
 
 <script>
-function generateLink() {
-    var inputData = document.getElementById("encodedInput").value.trim();
+function generateEncodedLink() {
+    var appNo = document.getElementById("appNo").value.trim();
+    var certNo = document.getElementById("certNo").value.trim();
     var resultBox = document.getElementById("resultBox");
-    var decodedNoSpan = document.getElementById("decodedNo");
+    var combinedTextSpan = document.getElementById("combinedText");
+    var encodedCodeStyle = document.getElementById("encodedCode");
     var finalLinkA = document.getElementById("finalLink");
 
-    if (inputData === "") {
-        alert("कृपया कोड डालें!");
+    if (appNo === "" || certNo === "") {
+        alert("Kripya dono numbers daalein!");
         return;
     }
 
     try {
-        // Base64 डिकोड करने का जावास्क्रिप्ट फंक्शन (atob)
-        var decodedString = atob(inputData);
+        // Dono numbers ko comma se jodna (jaise govt site leti hai)
+        var combinedText = appNo + "," + certNo;
         
-        // आपका सरकारी यूआरएल जिसके आगे नंबर जोड़ना है
-        var baseUrl = "https://edistrict.up.gov.in/eDistrict/Certificate/Caste/Forms/printCert.aspx?application_no=";
+        // JavaScript me string ko Base64 encode karne ke liye btoa use hota hai
+        var encodedString = btoa(combinedText);
         
-        // पूरा फाइनल लिंक
-        var fullUrl = baseUrl + decodedString;
+        // Aapka naya wala URL jiske aage encode kiya hua code lagana hai
+        var baseUrl = "https://edistrict.up.gov.in/edistrictup/certVerify.aspx?application_no=";
+        var fullUrl = baseUrl + encodedString;
 
-        // स्क्रीन पर दिखाना
-        decodedNoSpan.innerText = decodedString;
+        // Screen par data dikhana
+        combinedTextSpan.innerText = combinedText;
+        encodedCodeStyle.innerText = encodedString;
         finalLinkA.href = fullUrl;
         finalLinkA.innerText = fullUrl;
         
         resultBox.style.display = "block";
     } catch (e) {
-        alert("गलत कोड! कृपया सही Base64 कोड डालें।");
+        alert("Kuch gaddbad hui! Kripya sahi numbers daalein.");
         resultBox.style.display = "none";
     }
 }
