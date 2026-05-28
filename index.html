@@ -3,196 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UP e-District Encoder Tool with QR</title>
+    <title>UP e-District Editable Certificate & QR Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
+        /* Control Panel Styles (Screen Only) */
+        #control-panel {
+            background: #f4f7f6;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 700px; /* QR ke liye thoda bada kiya */
-            width: 100%;
-        }
-        h2 {
-            color: #333;
-            text-align: center;
             margin-bottom: 20px;
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
         }
-        label {
+        .input-group {
+            margin-bottom: 10px;
+        }
+        .input-group label {
+            display: inline-block;
+            width: 180px;
             font-weight: bold;
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
         }
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
+        .input-group input {
+            width: 350px;
+            padding: 6px;
             border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 16px;
+            border-radius: 4px;
         }
-        button {
-            width: 100%;
+        .btn {
             background-color: #007bff;
             color: white;
-            padding: 12px;
+            padding: 8px 15px;
             border: none;
-            border-radius: 5px;
-            font-size: 16px;
+            border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
         }
-        button:hover {
-            background-color: #0056b3;
-        }
-        /* Left and Right layout block */
-        .result-layout {
-            margin-top: 25px;
-            padding: 20px;
-            background-color: #e9ecef;
-            border-radius: 5px;
-            display: none; /* Pehle se chhupa rahega */
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
-        .left-side {
-            flex: 1;
-            word-break: break-all;
-        }
-        .right-side {
+        .btn:hover { background-color: #0056b3; }
+
+        /* Original Certificate CSS Styling */
+        .cert-body {
+            margin: 0;
+            padding: 10px;
+            font-family: Arial Unicode MS, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            background: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .right-side p {
-            margin: 5px 0 0 0;
-            font-size: 12px;
-            color: #666;
-            font-weight: bold;
+        .mgn {
+            border: 1px solid #000000;
+            padding-left: 4px;
+            padding-right: 4px;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            font-size: 10pt;
+            width: 90%;
         }
-        .result-layout a {
-            color: #28a745;
-            text-decoration: none;
-            font-weight: bold;
+        /* Printable Action Button Setup */
+        #actbtn input {
+            border: 1px solid #000;
+            padding: 4px 10px;
+            cursor: pointer;
+            background: #e1e1e1;
         }
-        .result-layout a:hover {
-            text-decoration: underline;
+        
+        /* QR Container styling inside certificate */
+        #qrcode-target {
+            cursor: pointer;
+            display: inline-block;
+            border: 1px dashed #ccc;
+            padding: 5px;
+            background: #fff;
         }
-        /* Mobile screen ke liye adjustment */
-        @media (max-width: 600px) {
-            .result-layout {
-                flex-direction: column;
+        #qrcode-target:hover {
+            background: #f0f0f0;
+            title: "Click to upload/change";
+        }
+
+        /* Editable highlight zone for user convenience */
+        [contenteditable="true"]:hover {
+            background-color: #ffffcc;
+            outline: 1px dashed #ff9900;
+        }
+
+        /* Print Media Queries - Hides Control Panel and Buttons */
+        @media print {
+            #control-panel, #actbtn, #file-input-label {
+                display: none !important;
+            }
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            .mgn {
+                width: 100% !important;
+                border: none !important;
             }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>e-District Link & QR Generator</h2>
-    
-    <label for="appNo">Application Number:</label>
-    <input type="text" id="appNo" placeholder="उदा: 261900010064472">
-
-    <label for="certNo">Certificate Number:</label>
-    <input type="text" id="certNo" placeholder="उदा: 602261007721">
-
-    <button onclick="generateEverything()">Link & QR Generate Karein</button>
-
-    <div id="resultBox" class="result-layout">
-        
-        <div class="left-side">
-            <p><strong>Combined Text:</strong> <span id="combinedText"></span></p>
-            <p><strong>Encoded Base64 Code:</strong> <br><code id="encodedCode" style="background:#fff; padding:2px 5px; border:1px solid #ddd;"></code></p>
-            <p><strong>Final Verification Link:</strong> <br>
-                <a id="finalLink" href="#" target="_blank">Yahan Click Karein</a>
-            </p>
-        </div>
-
-        <div class="right-side">
-            <div id="qrcode"></div>
-            <p>Scan to Verify</p>
-        </div>
-
+<div id="control-panel">
+    <h2>e-District Certificate Live Modifier Tool</h2>
+    <div class="input-group">
+        <label for="fetchUrl">Paste Verification Link:</label>
+        <input type="text" id="fetchUrl" placeholder="https://edistrict.up.gov.in/edistrictup/certVerify.aspx?application_no=...">
+        <button class="btn" onclick="fetchAndDecodeDetails()">Fetch Details</button>
     </div>
+    <hr>
+    <p style="color: #666; font-size: 13px;">* <b>Tip:</b> आप सीधे नीचे प्रमाण पत्र के किसी भी टेक्स्ट पर क्लिक करके उसे बदल सकते हैं (A to Z Editable)।</p>
+    <p style="color: #666; font-size: 13px;">* <b>QR Feature:</b> नीचे दिए गए QR कोड पर क्लिक करके आप नया QR जनरेट करने के लिए लिंक बदल सकते हैं।</p>
+</div>
+
+<div class="cert-body">
+    <form name="form1" id="form1" onsubmit="event.preventDefault();">
+        
+        <p align="justify">
+            <img style="Z-INDEX: -1; POSITION: absolute; FLOAT: left; TOP: 320px; LEFT: 35%; opacity: 0.12;" border="0" src="https://edistrict.up.gov.in/edistrict/images/GOVERNMENT_MONOGRAM.gif" width="400" height="400">
+        </p>
+
+        <table class="mgn" border="0" align="center" cellspacing="0" cellpadding="0">
+            <tr>
+                <td colspan="6" align="left" contenteditable="true">&nbsp;ई-डिस्ट्रिक्ट के अन्तर्गत जारी..</td>
+            </tr>
+            <tr>
+                <td colspan="6"><p align="center"><img src="https://edistrict.up.gov.in/edistrict/images/sealofup.jpg" width="110" height="110" /></p></td>
+            </tr>
+            <tr>
+                <td colspan="6"><p align="center"><font size="7" contenteditable="true">उत्तर प्रदेश शासन</font></p></td>
+            </tr>
+            <tr>
+                <td colspan="6"><p align="center"><b><font size="4" contenteditable="true">कार्यालय तहसीलदार द्वारा प्रदत्त आय प्रमाण पत्र </font></b></p></td>
+            </tr>
+            <tr>
+                <td width="17%" nowrap><b>जिला </b></td>
+                <td nowrap><b contenteditable="true">देवरिया</b></td>
+                <td width="12%" colspan="3 align=right">&nbsp;</td>
+                <td nowrap align="right" width="67%">&nbsp;</td>
+            </tr>
+            <tr>
+                <td width="17%" nowrap><b>तहसील </b></td>
+                <td nowrap><b contenteditable="true">रुद्रपुर</b></td>
+                <td width="12%" colspan="3" align="right">&nbsp;</td>
+                <td nowrap align="right" width="67%"><b>जारी दिनांक: <span id="lblCertDate1" contenteditable="true">12/02/2026</span></b></td>
+            </tr>
+            <tr>
+                <td width="17%" valign="top" nowrap><b>आवेदन क्र०</b></td>
+                <td valign="top" nowrap><b id="lblAppNo" contenteditable="true">261900010026169</b></td>
+                <td width="12%" colspan="3" valign="top" align="left">&nbsp;</td>
+                <td width="67%" align="right">&nbsp;</td>
+            </tr>
+            <tr>
+                <td width="17%" valign="top" nowrap><b>प्रमाणपत्र क्र०</b></td>
+                <td valign="top" nowrap><b id="lblCertNo" contenteditable="true">602261003597</b></td>
+                <td width="12%" colspan="3" valign="top" align="left">&nbsp;</td>
+                <td width="67%" align="right">&nbsp;</td>
+            </tr>
+            <tr>
+                <td colspan="6">&nbsp;</td>
+            </tr>
+            <tr>
+                <td colspan="6" align="center">
+                    <table border="0" cellspacing="0" cellpadding="0" style="font-size:10pt" width="100%">
+                        <tr>
+                            <td width="17%" valign="top">&nbsp;</td>
+                            <td height="20" colspan="2" valign="top" contenteditable="true">यथा विभागीय (क्षेत्रीय भूलॆख निरीक्षक तथा लॆखपाल की) जांच/रिपॊर्ट के आधार पर </td>
+                            <td width="18%" height="20" colspan="3" align="right" rowspan="6">
+                                <div id="qrcode-target" onclick="promptForQRLink()" title="Click to update QR Link Link"></div>
+                                <div id="file-input-label" style="font-size: 9px; color: blue; text-align: center;">[Click QR to Change]</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="17%" valign="top">&nbsp;</td>
+                            <td height="20" nowrap valign="top" width="232" contenteditable="true">प्रमाणित किया जाता है कि</td>
+                            <td width="32%" height="20" valign="top" align="left" style="font-family: verdana;"><b contenteditable="true">संगीता/Sangeeta</b></td>
+                        </tr>
+                        <tr>
+                            <td width="17%" nowrap valign="top">&nbsp;</td>
+                            <td valign="top" height="20" nowrap width="232" contenteditable="true">पत्नी</td>
+                            <td width="32%" height="20" colspan="2" valign="top" align="left" style="font-family: verdana;"><b contenteditable="true">तेज प्रताप</b></td>
+                        </tr>
+                        <tr>
+                            <td width="17%" nowrap valign="top">&nbsp;</td>
+                            <td valign="top" height="20" nowrap width="232" contenteditable="true">माता का नाम</td>
+                            <td width="32%" height="20" colspan="2" valign="top" align="left" style="font-family: verdana;"><b contenteditable="true">जिलेबा देवी</b></td>
+                        </tr>
+                        <tr>
+                            <td width="17%" nowrap valign="top">&nbsp;</td>
+                            <td valign="top" height="20" nowrap width="232" contenteditable="true">मकान नम्बर </td>
+                            <td width="32%" height="20" colspan="2" valign="top" align="left" style="font-family: verdana;"><b contenteditable="true"></b></td>
+                        </tr>
+                        <tr>
+                            <td width="17%" nowrap valign="top">&nbsp;</td>
+                            <td valign="top" height="20" nowrap width="232" contenteditable="true">मोहल्ला </td>
+                            <td width="32%" height="20" colspan="2" valign="top" align="left" style="font-family: verdana;"><b contenteditable="true">चौहट्टा वार्ड पोस्ट रुद्रपुर</b></td>
+                        </tr>
+                        <tr>
+                            <td width="17%" nowrap valign="top">&nbsp;</td>
+                            <td valign="top" height="20" nowrap width="232" contenteditable="true">ग्राम</td>
+                            <td width="32%" height="20" colspan="2" valign="top" align="left" style="font-family: verdana;"><b contenteditable="true"></b></td>
+                        </tr>
+                        <tr>
+                            <td width="17%" nowrap valign="top">&nbsp;</td>
+                            <td valign="top" height="20" nowrap width="232" contenteditable="true">तहसील</td>
+                            <td width="32%" height="20" valign="top" align="left" style="font-family: verdana;"><b contenteditable="true">रुद्रपुर</b></td>
+                        </tr>
+                        <tr>
+                            <td width="17%" nowrap valign="top">&nbsp;</td>
+                            <td valign="top" height="20" nowrap width="232" contenteditable="true">जनपद</td>
+                            <td width="32%" height="20" valign="top" align="left" style="font-family: verdana;"><b contenteditable="true">देवरिया</b></td>
+                            <td width="18%" nowrap colspan="2" align="right">&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td valign="top" colspan="6" contenteditable="true" style="text-align: justify; line-height: 18px;">
+                                उत्तर प्रदेश का/की निवासी है व उसका वर्तमान पता मकान नम्बर <u><b></b></u> ग्राम <b><u></u></b>मोहल्ला <u><b>चौहट्टा वार्ड पोस्ट रुद्रपुर</b></u> तहसील <u><b>रुद्रपुर</b></u> ,जनपद <u><b>देवरिया</b></u> उत्तर प्रदेश है | 
+                                परिवार की समस्त स्रोतों से मासिक आय अंकों में रु <b>4500</b> व शब्दो में रु. <b>Four Thousand Five Hundred </b> है। जिसके अनुसार कुल वार्षिक आय रु. <b>54000</b> व शब्दो में रु. <b>Fifty Four Thousand</b> है। 
+                                आय का स्त्रोत कृषि है। यह प्रमाण पत्र जारी हॊनॆ की दिनांक सॆ तीन वर्ष तक मान्य रहॆगा |
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="6" align="left" style="font-size:10pt">&nbsp;</td>
+            </tr>
+            <tr>
+                <td colspan="6" align="left">
+                    <table border="0" width="100%" cellspacing="0" cellpadding="0" id="tabled">
+                        <tr>
+                            <td width="35%" valign="bottom" style="font-size:10pt">
+                                <span contenteditable="true">
+                                    <b>जारी कर्ता केन्द्र: जितेंद्र प्रसाद,सीएससी गवर्नेंस जन सेवा केंद्र<br>
+                                    पद: जितेंद्र प्रसाद, केन्द्र प्रभारी <br>
+                                    स्थान: Bhikhampura,ब‌रहज,भिखमपुरा,बरहज,ब‌रहज <br>
+                                    दिनॉंक: <span style="font-size: 11px; font-family: verdana">27/05/2026</span></b>
+                                </span><br>हस्ताक्षर एंव मुहर
+                            </td>
+                            <td width="30%" valign="bottom">
+                                <table border="0" width="100%" cellspacing="0" cellpadding="0" id="table1">
+                                    <tr>
+                                        <td width="50%" valign="top" align="right" style="font-size: 16px; font-family: Arial" contenteditable="true">CHANDRA SHEKHAR VERMA&nbsp;</td>
+                                        <td valign="top" width="50%" style="font-size: 8px; font-family: Arial" contenteditable="true">Digitally Signed by CHANDRA SHEKHAR VERMA O=Personal, S=UTTAR PRADESH&nbsp;</td>
+                                    </tr>
+                                </table>&nbsp;
+                            </td>
+                            <td width="35%" valign="top" align="center" style="font-size:10pt" contenteditable="true">
+                                <b>सक्षम अधिकारी/तहसीलदार<br>डिजिटल हस्ताक्षरित<br>रुद्रपुर,देवरिया<br>दिनॉंक: <span style="font-size: 11px; font-family: verdana" id="lblCertDate2">12/02/2026</span></b>
+                            </td>
+                        </tr>
+                    </table>&nbsp;
+                </td>
+            </tr>
+            <tr>
+                <td align="center" colspan="6">
+                    <font size="1pt"><b> यह प्रमाण पत्र इलेक्ट्रॉनिक डिलिवरी सिस्टम द्वारा तैयार किया गया है तथा डिजिटल सिग्नेचर से हस्ताक्षरित है। सम्बन्धित केन्द्र के अधिकृत कर्मी द्वारा प्रमाणित किया गया है। यह प्रमाण पत्र वेबसाइट https://edistrict.up.gov.in पर इसका पहले आवेदन क्र० फिर प्रमाणपत्र क्र० अंकित कर,सत्यापित किया जा सकता है। </b></font>
+                </td>
+            </tr>
+        </table>
+
+        <table id="actbtn" align="center" style="width: 85%; margin-top: 20px;">
+            <tr>
+                <td align="center">
+                    <input type="button" name="Button6" value="Print" onclick="window.print();" id="Button6" />
+                    <input type="button" name="Button2" value="Close" id="Button2" onclick="alert('Window Close Clicked')" />
+                </td>
+            </tr>
+        </table>
+    </form>
 </div>
 
 <script>
-// QR Code object ko store karne ke liye variable
-var qrcodeContainer = null;
+// Global QR variable
+var qrcodeObj = null;
 
-function generateEverything() {
-    var appNo = document.getElementById("appNo").value.trim();
-    var certNo = document.getElementById("certNo").value.trim();
-    var resultBox = document.getElementById("resultBox");
-    var combinedTextSpan = document.getElementById("combinedText");
-    var encodedCodeStyle = document.getElementById("encodedCode");
-    var finalLinkA = document.getElementById("finalLink");
-    var qrcodeDiv = document.getElementById("qrcode");
+// Page initialization function
+window.onload = function() {
+    // Generate initial default QR on load based on default text
+    updateQRCode();
 
-    if (appNo === "" || certNo === "") {
-        alert("Kripya dono numbers daalein!");
-        return;
+    // Setup live listener to auto-regenerate QR if App No or Cert No is directly edited on layout
+    document.getElementById("lblAppNo").addEventListener("input", updateQRCode);
+    document.getElementById("lblCertNo").addEventListener("input", updateQRCode);
+};
+
+// Function to generate/update QR Code
+function updateQRCode(customUrl = null) {
+    var finalUrl = customUrl;
+    
+    if (!finalUrl) {
+        var appNo = document.getElementById("lblAppNo").innerText.trim();
+        var certNo = document.getElementById("lblCertNo").innerText.trim();
+        
+        // Build original Base64 parameter format: appNo,certNo
+        var combinedText = appNo + "," + certNo;
+        var encodedString = btoa(combinedText);
+        finalUrl = "https://edistrict.up.gov.in/edistrictup/certVerify.aspx?application_no=" + encodedString;
     }
 
-    try {
-        // Dono numbers ko comma se jodna
-        var combinedText = appNo + "," + certNo;
-        
-        // Base64 encode karna
-        var encodedString = btoa(combinedText);
-        
-        // Final URL construct karna
-        var baseUrl = "https://edistrict.up.gov.in/edistrictup/certVerify.aspx?application_no=";
-        var fullUrl = baseUrl + encodedString;
+    var qrcodeDiv = document.getElementById("qrcode-target");
+    qrcodeDiv.innerHTML = ""; // Clear old contents
 
-        // Screen par data set karna
-        combinedTextSpan.innerText = combinedText;
-        encodedCodeStyle.innerText = encodedString;
-        finalLinkA.href = fullUrl;
-        finalLinkA.innerText = fullUrl;
-        
-        // Purane QR code ko saaf karna taaki naya ban sake
-        qrcodeDiv.innerHTML = "";
+    qrcodeObj = new QRCode(qrcodeDiv, {
+        text: finalUrl,
+        width: 100,
+        height: 100,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M
+    });
+}
 
-        // Naya QR Code generate karna (150x150 size ka)
-        qrcodeContainer = new QRCode(qrcodeDiv, {
-            text: fullUrl,
-            width: 150,
-            height: 150,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-
-        // Result box ko flex layout ke sath display karna
-        resultBox.style.display = "flex";
-    } catch (e) {
-        alert("Kuch gaddbad hui! Kripya sahi numbers daalein.");
-        resultBox.style.display = "none";
+// Function to prompt custom link when user clicks on QR Code
+function promptForQRLink() {
+    var currentAppNo = document.getElementById("lblAppNo").innerText.trim();
+    var currentCertNo = document.getElementById("lblCertNo").innerText.trim();
+    var currentDefaultUrl = "https://edistrict.up.gov.in/edistrictup/certVerify.aspx?application_no=" + btoa(currentAppNo + "," + currentCertNo);
+    
+    var userUrl = prompt("Enter verification URL to fetch/embed into QR Code:", currentDefaultUrl);
+    if (userUrl && userUrl.trim() !== "") {
+        parseAndApplyUrl(userUrl.trim());
     }
 }
-</script>
 
+// Internal parser logic to break URL parameters and apply data
+function parseAndApplyUrl(urlStr) {
+    try {
+        var url = new URL(urlStr);
+        var appNoParam = url.searchParams.get("application_no");
+        
+        if (appNoParam) {
+            // Decode Base64 string
+            var decodedText = atob(appNoParam); // Output format: "AppNo,CertNo"
+            var parts = decodedText.split(",");
+            
+            if (parts.length >= 2) {
+                document.getElementById("lblAppNo").innerText = parts[0].trim();
+                document.getElementById("lblCertNo").innerText = parts[1].trim();
+                alert("Details successfully parsed and updated inside certificate!");
+            }
+        }
+        // Update QR view
+        updateQRCode(urlStr);
+    } catch (e) {
+        // Fallback if URL is non-standard but custom
+        updateQRCode(urlStr);
+        alert("QR Updated with custom URL. Note: Non-standard URLs could not auto-fill fields.");
+    }
+}
+
+// Top Bar Action: Fetch data from input box
+function fetchAndDecodeDetails() {
+    var urlInput = document.getElementById("fetchUrl").value.trim();
+    if(urlInput === "") {
+        alert("Please paste an e-District link first!");
+        return;
+    }
+    parseAndApplyUrl(urlInput);
+}
+</script>
 </body>
 </html>
