@@ -145,10 +145,10 @@
 
     <div class="container">
         <h2>e-District Verification Direct-</h2>
-        <label for="appNo">Application Number:</label>
+        <label for="appNo">आवेदन क्र0:</label>
         <input type="text" id="appNo" placeholder="उदा: 261900010064472">
 
-        <label for="certNo">Certificate Number:</label>
+        <label for="certNo">प्रमाणपत्र क्र0:</label>
         <input type="text" id="certNo" placeholder="उदा: 602261007721">
 
         <button onclick="generateEverything()">Submit Details</button>
@@ -162,7 +162,7 @@
 
     <div class="container">
         <h2>Certificate Photo Viewer</h2>
-        <label for="photoAppNo">Application Number:</label>
+        <label for="photoAppNo">आवेदन क्र0:</label>
         <input type="text" id="photoAppNo" placeholder="उदा: 261900010064474">
 
         <button onclick="fetchPhoto()" style="background-color: #ff9800;">Show Photo</button>
@@ -242,7 +242,7 @@ function fetchPhoto() {
     let certImage = document.getElementById("certImage");
 
     if (photoAppNo === "") {
-        alert("कृपया फोटो देखने के लिए Application Number डालें!");
+        alert("कृपया फोटो देखने के लिए आवेदन क्र0 डालें!");
         return;
     }
 
