@@ -172,7 +172,6 @@
 
         <div id="photoResultBox" class="result-layout">
             <img id="certImage" src="" alt="Applicant Photo">
-            <!-- यहाँ <a> की जगह अब <button> लगा दिया गया है जो सीधे डाउनलोड करेगा -->
             <button id="downloadPhotoBtn" class="download-btn" onclick="forceDownloadPhoto()" style="border:none; cursor:pointer;">Download Photo</button>
         </div>
     </div>
@@ -250,7 +249,7 @@ function downloadQR() {
 }
 
 // ==========================================
-// 2. नए फोटो टूल की स्क्रिप्ट (डायरेक्ट डाउनलोड के साथ)
+// 2. नए फोटो टूल की स्क्रिप्ट (Advance Direct Download)
 // ==========================================
 let currentPhotoUrl = "";
 let currentPhotoAppNo = "";
@@ -273,30 +272,40 @@ function fetchPhoto() {
     photoResultBox.style.display = "flex";
 }
 
-// यह फ़ंक्शन लिंक को नए टैब में खोलने की बजाय सीधे डाउनलोड करने के लिए फोर्स करेगा
+// एडवांस लेवल डाउनलोड: Proxy के जरिए सिक्योरिटी बायपास करना
 function forceDownloadPhoto() {
     if (!currentPhotoUrl) return;
 
-    // Fetch API के ज़रिए इमेज को Blob (फ़ाइल) में कन्वर्ट करके डाउनलोड करवाना
-    fetch(currentPhotoUrl)
+    let btn = document.getElementById("downloadPhotoBtn");
+    btn.innerText = "Downloading..."; // लोडिंग स्टेट
+
+    // CORS Bypass करने के लिए फ्री API (Proxy) का उपयोग
+    let proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(currentPhotoUrl);
+
+    fetch(proxyUrl)
         .then(response => response.blob())
         .then(blob => {
+            // फोटो का कच्चा डेटा (Blob) निकालकर उसे लोकल फाइल बना देना
             let blobUrl = window.URL.createObjectURL(blob);
             let link = document.createElement("a");
             link.href = blobUrl;
-            link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg"; // फाइल का नाम
+            link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg"; // इसी नाम से सेव होगा
             document.body.appendChild(link);
-            link.click();
+            link.click(); // ऑटोमैटिक क्लिक (डायरेक्ट डाउनलोड)
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
+            
+            btn.innerText = "Download Photo"; // बटन को वापस नॉर्मल करना
         })
         .catch(error => {
-            // अगर सरकारी वेबसाइट की हार्ड सिक्योरिटी (CORS) बैकग्राउंड डाउनलोड रोकती है, तो फॉलबैक
+            console.error("Download fail hua:", error);
+            // अगर किसी वजह से प्रॉक्सी ब्लॉक हो जाए, तो बैकअप प्लान
             let link = document.createElement("a");
             link.href = currentPhotoUrl;
             link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg";
             link.target = "_blank";
             link.click();
+            btn.innerText = "Download Photo";
         });
 }
 </script>
