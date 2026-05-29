@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UP e-District Encoder Tool & Photo Viewer</title>
+    <!-- QR Code Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
@@ -18,7 +19,7 @@
             min-height: 100vh;
         }
 
-        /* दोनों बॉक्स को अगल-बगल रखने के लिए नया लेआउट */
+        /* दोनों बॉक्स को अगल-बगल रखने के लिए लेआउट */
         .main-wrapper {
             display: flex;
             flex-wrap: wrap;
@@ -33,7 +34,7 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            flex: 1 1 400px; /* कम से कम 400px चौड़ाई लेगा */
+            flex: 1 1 400px; 
             text-align: center;
         }
         
@@ -139,6 +140,7 @@
 
 <div class="main-wrapper">
 
+    <!-- =========== Box 1: पुराना वाला Verification Tool =========== -->
     <div class="container">
         <h2>e-District Verification Tool</h2>
         
@@ -159,6 +161,7 @@
         </div>
     </div>
 
+    <!-- =========== Box 2: Photo Viewer Tool =========== -->
     <div class="container">
         <h2>Certificate Photo Viewer</h2>
         
@@ -169,7 +172,8 @@
 
         <div id="photoResultBox" class="result-layout">
             <img id="certImage" src="" alt="Applicant Photo">
-            <a id="downloadPhotoBtn" href="#" class="download-btn" target="_blank">Download Photo</a>
+            <!-- यहाँ <a> की जगह अब <button> लगा दिया गया है जो सीधे डाउनलोड करेगा -->
+            <button id="downloadPhotoBtn" class="download-btn" onclick="forceDownloadPhoto()" style="border:none; cursor:pointer;">Download Photo</button>
         </div>
     </div>
 
@@ -246,30 +250,54 @@ function downloadQR() {
 }
 
 // ==========================================
-// 2. नए फोटो टूल की स्क्रिप्ट
+// 2. नए फोटो टूल की स्क्रिप्ट (डायरेक्ट डाउनलोड के साथ)
 // ==========================================
+let currentPhotoUrl = "";
+let currentPhotoAppNo = "";
+
 function fetchPhoto() {
     let photoAppNo = document.getElementById("photoAppNo").value.trim();
     let photoResultBox = document.getElementById("photoResultBox");
     let certImage = document.getElementById("certImage");
-    let downloadPhotoBtn = document.getElementById("downloadPhotoBtn");
 
     if (photoAppNo === "") {
         alert("कृपया फोटो देखने के लिए Application Number डालें!");
         return;
     }
 
-    // फोटो का लिंक बनाना
-    let photoUrl = "https://edistrict.up.gov.in/edistrict/showphotoCert.aspx?appid=" + photoAppNo;
+    currentPhotoAppNo = photoAppNo;
+    currentPhotoUrl = "https://edistrict.up.gov.in/edistrict/showphotoCert.aspx?appid=" + photoAppNo;
 
-    // फोटो और रिजल्ट बॉक्स को दिखाना
-    certImage.src = photoUrl;
+    certImage.src = currentPhotoUrl;
     certImage.style.display = "block";
     photoResultBox.style.display = "flex";
+}
 
-    // डाउनलोड बटन में लिंक सेट करना
-    downloadPhotoBtn.href = photoUrl;
-    downloadPhotoBtn.download = "Applicant_Photo_" + photoAppNo + ".jpg";
+// यह फ़ंक्शन लिंक को नए टैब में खोलने की बजाय सीधे डाउनलोड करने के लिए फोर्स करेगा
+function forceDownloadPhoto() {
+    if (!currentPhotoUrl) return;
+
+    // Fetch API के ज़रिए इमेज को Blob (फ़ाइल) में कन्वर्ट करके डाउनलोड करवाना
+    fetch(currentPhotoUrl)
+        .then(response => response.blob())
+        .then(blob => {
+            let blobUrl = window.URL.createObjectURL(blob);
+            let link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg"; // फाइल का नाम
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        })
+        .catch(error => {
+            // अगर सरकारी वेबसाइट की हार्ड सिक्योरिटी (CORS) बैकग्राउंड डाउनलोड रोकती है, तो फॉलबैक
+            let link = document.createElement("a");
+            link.href = currentPhotoUrl;
+            link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg";
+            link.target = "_blank";
+            link.click();
+        });
 }
 </script>
 
