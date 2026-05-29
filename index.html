@@ -221,10 +221,8 @@ function generateEverything() {
 
 function openSecret() {
     if(!hiddenUrlBase64) return;
-    
     let url = atob(hiddenUrlBase64);
     let windowFeatures = "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, width=900, height=700, top=100, left=200";
-    
     window.open(url, "VerificationWindow", windowFeatures);
 }
 
@@ -249,7 +247,7 @@ function downloadQR() {
 }
 
 // ==========================================
-// 2. नए फोटो टूल की स्क्रिप्ट (Advance Direct Download)
+// 2. नए फोटो टूल की स्क्रिप्ट (ADVANCED DIRECT DOWNLOAD)
 // ==========================================
 let currentPhotoUrl = "";
 let currentPhotoAppNo = "";
@@ -272,39 +270,45 @@ function fetchPhoto() {
     photoResultBox.style.display = "flex";
 }
 
-// एडवांस लेवल डाउनलोड: Proxy के जरिए सिक्योरिटी बायपास करना
+// एडवांस लेवल डाउनलोड: 2 अलग-अलग API Proxies का इस्तेमाल
 function forceDownloadPhoto() {
     if (!currentPhotoUrl) return;
 
     let btn = document.getElementById("downloadPhotoBtn");
-    btn.innerText = "Downloading..."; // लोडिंग स्टेट
+    btn.innerText = "Downloading..."; // बटन पर लोडिंग दिखाएं
 
-    // CORS Bypass करने के लिए फ्री API (Proxy) का उपयोग
-    let proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(currentPhotoUrl);
+    // प्रॉक्सी जो फोटो (binary) को सीधे उठा सकते हैं
+    let proxy1 = "https://api.codetabs.com/v1/proxy?quest=" + currentPhotoUrl;
+    let proxy2 = "https://corsproxy.io/?" + encodeURIComponent(currentPhotoUrl);
 
-    fetch(proxyUrl)
-        .then(response => response.blob())
+    // फेच करने का फंक्शन
+    function tryFetch(url) {
+        return fetch(url).then(res => {
+            if (!res.ok) throw new Error("Network Error");
+            return res.blob();
+        });
+    }
+
+    // पहले proxy1 ट्राई करें, फेल हो तो proxy2 ट्राई करें
+    tryFetch(proxy1)
+        .catch(() => tryFetch(proxy2)) 
         .then(blob => {
-            // फोटो का कच्चा डेटा (Blob) निकालकर उसे लोकल फाइल बना देना
+            // डायरेक्ट फाइल डाउनलोड का कोड
             let blobUrl = window.URL.createObjectURL(blob);
             let link = document.createElement("a");
             link.href = blobUrl;
-            link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg"; // इसी नाम से सेव होगा
+            link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg"; 
             document.body.appendChild(link);
-            link.click(); // ऑटोमैटिक क्लिक (डायरेक्ट डाउनलोड)
+            link.click(); // ऑटोमैटिक क्लिक
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
             
-            btn.innerText = "Download Photo"; // बटन को वापस नॉर्मल करना
+            btn.innerText = "Download Photo"; // बटन को वापस नॉर्मल कर दें
         })
         .catch(error => {
-            console.error("Download fail hua:", error);
-            // अगर किसी वजह से प्रॉक्सी ब्लॉक हो जाए, तो बैकअप प्लान
-            let link = document.createElement("a");
-            link.href = currentPhotoUrl;
-            link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg";
-            link.target = "_blank";
-            link.click();
+            console.error("Dono proxies fail ho gaye:", error);
+            // अगर सरकारी सर्वर पूरी तरह से ब्लॉक कर दे, तो यूजर को अलर्ट दें
+            alert("सुरक्षा कारणों से डायरेक्ट डाउनलोड ब्लॉक है! कृपया फोटो पर राइट-क्लिक करें (या मोबाइल में फोटो दबाकर रखें) और 'Save Image' चुनें।");
             btn.innerText = "Download Photo";
         });
 }
