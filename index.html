@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UP e-District Encoder Tool & Photo Viewer</title>
-    <!-- QR Code Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
@@ -122,13 +121,28 @@
             display: none;
             margin-bottom: 10px;
         }
+
+        /* निर्देश बॉक्स का नया स्टाइल */
+        .instruction-box {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.6;
+            text-align: center;
+            max-width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
 
 <div class="main-wrapper">
 
-    <!-- =========== Box 1: e-District Verification =========== -->
     <div class="container">
         <h2>e-District Verification Tool</h2>
         <label for="appNo">Application Number:</label>
@@ -146,7 +160,6 @@
         </div>
     </div>
 
-    <!-- =========== Box 2: Photo Viewer & ADVANCED Download =========== -->
     <div class="container">
         <h2>Certificate Photo Viewer</h2>
         <label for="photoAppNo">Application Number:</label>
@@ -156,10 +169,11 @@
 
         <div id="photoResultBox" class="result-layout">
             <img id="certImage" src="" alt="Applicant Photo">
-            <button id="सुरक्षा कारणों से डायरेक्ट डाउनलोड ब्लॉक हो गया है।
-कृपया फोटो पर अपनी उंगली दबाकर रखें (Long Press) या Right Click करके 'Save Image' करें।Btn" class="सुरक्षा कारणों से डायरेक्ट डाउनलोड ब्लॉक हो गया है।
-कृपया फोटो पर अपनी उंगली दबाकर रखें (Long Press) या Right Click करके 'Save Image' करें।-btn" onclick="forceDownloadPhoto()">सुरक्षा कारणों से डायरेक्ट डाउनलोड ब्लॉक हो गया है।
-कृपया फोटो पर अपनी उंगली दबाकर रखें (Long Press) या Right Click करके 'Save Image' करें।</button>
+            
+            <div class="instruction-box">
+                ⚠️ सुरक्षा कारणों से डायरेक्ट डाउनलोड ब्लॉक हो गया है।<br>
+                कृपया फोटो पर अपनी उंगली दबाकर रखें (Long Press) या Right Click करके 'Save Image' करें।
+            </div>
         </div>
     </div>
 
@@ -221,10 +235,7 @@ function downloadQR() {
     }
 }
 
-// ================= Box 2 Script (ULTIMATE TRICK) =================
-let currentPhotoUrl = "";
-let currentPhotoAppNo = "";
-
+// ================= Box 2 Script =================
 function fetchPhoto() {
     let photoAppNo = document.getElementById("photoAppNo").value.trim();
     let photoResultBox = document.getElementById("photoResultBox");
@@ -235,46 +246,10 @@ function fetchPhoto() {
         return;
     }
 
-    currentPhotoAppNo = photoAppNo;
-    currentPhotoUrl = "https://edistrict.up.gov.in/edistrict/showphotoCert.aspx?appid=" + photoAppNo;
-
-    certImage.src = currentPhotoUrl;
+    // सरकारी सर्वर से फोटो लोड करना
+    certImage.src = "https://edistrict.up.gov.in/edistrict/showphotoCert.aspx?appid=" + photoAppNo;
     certImage.style.display = "block";
     photoResultBox.style.display = "flex";
-}
-
-// सबसे एडवांस: Base64 JSON Data URI ट्रिक
-function forceDownloadPhoto() {
-    if (!currentPhotoUrl) return;
-
-    let btn = document.getElementById("downloadPhotoBtn");
-    btn.innerText = "Downloading..."; 
-
-    // यह API फोटो को टेक्स्ट (Base64) में बदल कर ब्राउज़र को देती है
-    let proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(currentPhotoUrl);
-
-    fetch(proxyUrl)
-        .then(response => response.json())
-        .then(data => {
-            // चेक कर रहे हैं कि सर्वर ने सही में इमेज दी है या नहीं
-            if (data.contents && data.contents.includes("data:image")) {
-                let link = document.createElement("a");
-                link.href = data.contents; // Base64 Data सीधा ब्राउज़र में
-                link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg"; 
-                document.body.appendChild(link);
-                link.click(); // क्लिक करते ही बिना टैब खुले सेव!
-                document.body.removeChild(link);
-                btn.innerText = "Download Photo"; 
-            } else {
-                throw new Error("Govt Blocked");
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            btn.innerText = "Download Photo";
-            // अगर यूपी सरकार का सर्वर इस ट्रिक को भी ब्लॉक कर दे (क्योंकि यह बाहरी API है)
-            alert("भाई, यूपी सरकार की सिक्योरिटी ने पीछे से डाउनलोड करने वाले रास्ते (API) को ब्लॉक कर दिया है। \n\n✅ 100% काम करने वाला देसी जुगाड़:\nमोबाइल में: स्क्रीन पर दिख रही फोटो को अपनी उंगली से दबा कर रखें (Long Press) और 'Download Image' चुन लें।\nकंप्यूटर में: फोटो पर Right Click करें और 'Save image as...' कर लें।");
-        });
 }
 </script>
 
