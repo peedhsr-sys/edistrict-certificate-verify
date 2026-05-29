@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UP e-District Encoder Tool with QR</title>
+    <!-- QR Code Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -19,97 +21,97 @@
         .container {
             background-color: white;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 700px; /* QR ke liye thoda bada kiya */
+            max-width: 500px;
             width: 100%;
+            text-align: center;
         }
         h2 {
             color: #333;
-            text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         label {
             font-weight: bold;
             display: block;
             margin-bottom: 8px;
             color: #555;
+            text-align: left;
         }
         input[type="text"] {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
             box-sizing: border-box;
             font-size: 16px;
+            transition: 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #007bff;
+            outline: none;
         }
         button {
             width: 100%;
             background-color: #007bff;
             color: white;
-            padding: 12px;
+            padding: 14px;
             border: none;
-            border-radius: 5px;
-            font-size: 16px;
+            border-radius: 6px;
+            font-size: 18px;
             cursor: pointer;
             font-weight: bold;
+            transition: 0.3s;
         }
         button:hover {
             background-color: #0056b3;
         }
-        /* Left and Right layout block */
+        
+        /* Result Area Design */
         .result-layout {
-            margin-top: 25px;
+            margin-top: 30px;
             padding: 20px;
             background-color: #e9ecef;
-            border-radius: 5px;
-            display: none; /* Pehle se chhupa rahega */
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
-        .left-side {
-            flex: 1;
-            word-break: break-all;
-        }
-        .right-side {
-            display: flex;
+            border-radius: 8px;
+            display: none; /* शुरुआत में छिपा रहेगा */
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            gap: 20px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .secret-btn {
+            background-color: #28a745;
+            width: auto;
+            padding: 12px 30px;
+        }
+        .secret-btn:hover {
+            background-color: #218838;
+        }
+
+        .download-btn {
+            background-color: #17a2b8;
+            width: auto;
+            padding: 10px 25px;
+            font-size: 16px;
+        }
+        .download-btn:hover {
+            background-color: #138496;
+        }
+
+        #qrcode {
             background: white;
             padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .right-side p {
-            margin: 5px 0 0 0;
-            font-size: 12px;
-            color: #666;
-            font-weight: bold;
-        }
-        .result-layout a {
-            color: #28a745;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .result-layout a:hover {
-            text-decoration: underline;
-        }
-        /* Mobile screen ke liye adjustment */
-        @media (max-width: 600px) {
-            .result-layout {
-                flex-direction: column;
-            }
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>e-District Link & QR Generator</h2>
+    <h2>e-District Verification Tool</h2>
     
     <label for="appNo">Application Number:</label>
     <input type="text" id="appNo" placeholder="उदा: 261900010064472">
@@ -117,66 +119,47 @@
     <label for="certNo">Certificate Number:</label>
     <input type="text" id="certNo" placeholder="उदा: 602261007721">
 
-    <button onclick="generateEverything()">Link & QR Generate Karein</button>
+    <button onclick="generateEverything()">Submit Details</button>
 
+    <!-- यहाँ सिर्फ Click Here बटन और QR Code दिखेगा -->
     <div id="resultBox" class="result-layout">
+        <button class="secret-btn" id="secretBtn" onclick="openSecret()">Click Here</button>
         
-        <div class="left-side">
-            <p><strong>Combined Text:</strong> <span id="combinedText"></span></p>
-            <p><strong>Encoded Base64 Code:</strong> <br><code id="encodedCode" style="background:#fff; padding:2px 5px; border:1px solid #ddd;"></code></p>
-            <p><strong>Final Verification Link:</strong> <br>
-                <a id="finalLink" href="#" target="_blank">Yahan Click Karein</a>
-            </p>
-        </div>
-
-        <div class="right-side">
-            <div id="qrcode"></div>
-            <p></p>
-        </div>
-
+        <div id="qrcode"></div>
+        
+        <button class="download-btn" onclick="downloadQR()">Download QR Code</button>
     </div>
 </div>
 
 <script>
-// QR Code object ko store karne ke liye variable
-var qrcodeContainer = null;
+// छिपे हुए लिंक को स्टोर करने के लिए
+let hiddenUrlBase64 = "";
 
 function generateEverything() {
-    var appNo = document.getElementById("appNo").value.trim();
-    var certNo = document.getElementById("certNo").value.trim();
-    var resultBox = document.getElementById("resultBox");
-    var combinedTextSpan = document.getElementById("combinedText");
-    var encodedCodeStyle = document.getElementById("encodedCode");
-    var finalLinkA = document.getElementById("finalLink");
-    var qrcodeDiv = document.getElementById("qrcode");
+    let appNo = document.getElementById("appNo").value.trim();
+    let certNo = document.getElementById("certNo").value.trim();
+    let resultBox = document.getElementById("resultBox");
+    let qrcodeDiv = document.getElementById("qrcode");
 
     if (appNo === "" || certNo === "") {
-        alert("Kripya dono numbers daalein!");
+        alert("कृपया एप्लीकेशन और सर्टिफिकेट नंबर दोनों डालें!");
         return;
     }
 
     try {
-        // Dono numbers ko comma se jodna
-        var combinedText = appNo + "," + certNo;
-        
-        // Base64 encode karna
-        var encodedString = btoa(combinedText);
-        
-        // Final URL construct karna
-        var baseUrl = "https://edistrict.up.gov.in/edistrictup/certVerify.aspx?application_no=";
-        var fullUrl = baseUrl + encodedString;
+        // दोनों नंबर को जोड़ना और Base64 में एन्कोड करना (आपका ओरिजिनल लॉजिक)
+        let combinedText = appNo + "," + certNo;
+        let encodedString = btoa(combinedText);
+        let fullUrl = "https://edistrict.up.gov.in/edistrictup/certVerify.aspx?application_no=" + encodedString;
 
-        // Screen par data set karna
-        combinedTextSpan.innerText = combinedText;
-        encodedCodeStyle.innerText = encodedString;
-        finalLinkA.href = fullUrl;
-        finalLinkA.innerText = fullUrl;
-        
-        // Purane QR code ko saaf karna taaki naya ban sake
+        // लिंक को फिर से सुरक्षित/छिपाने के लिए Base64 में स्टोर करना
+        hiddenUrlBase64 = btoa(fullUrl);
+
+        // पुराना QR Code साफ करना
         qrcodeDiv.innerHTML = "";
 
-        // Naya QR Code generate karna (150x150 size ka)
-        qrcodeContainer = new QRCode(qrcodeDiv, {
+        // नया QR Code बनाना
+        new QRCode(qrcodeDiv, {
             text: fullUrl,
             width: 150,
             height: 150,
@@ -185,11 +168,45 @@ function generateEverything() {
             correctLevel : QRCode.CorrectLevel.H
         });
 
-        // Result box ko flex layout ke sath display karna
+        // रिजल्ट बॉक्स को दिखाना
         resultBox.style.display = "flex";
     } catch (e) {
-        alert("Kuch gaddbad hui! Kripya sahi numbers daalein.");
+        alert("कुछ गड़बड़ हुई! कृपया सही नंबर डालें।");
         resultBox.style.display = "none";
+    }
+}
+
+// यह फ़ंक्शन लिंक को Popup Window में खोलेगा
+function openSecret() {
+    if(!hiddenUrlBase64) return;
+    
+    let url = atob(hiddenUrlBase64);
+    let windowFeatures = "toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, width=900, height=700, top=100, left=200";
+    
+    window.open(url, "VerificationWindow", windowFeatures);
+}
+
+// QR Code डाउनलोड करने का फ़ंक्शन
+function downloadQR() {
+    // QR Code लाइब्रेरी canvas में इमेज बनाती है, हम उसी को डाउनलोड करवाएंगे
+    let canvas = document.querySelector("#qrcode canvas");
+    
+    if (canvas) {
+        let link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png"); // इमेज डेटा निकालना
+        link.download = "eDistrict_QRCode.png"; // डाउनलोड होने वाली फाइल का नाम
+        link.click();
+    } else {
+        // अगर पुराने ब्राउज़र में canvas की जगह <img> टैग बनता है
+        let img = document.querySelector("#qrcode img");
+        if (img && img.src) {
+            let link = document.createElement("a");
+            link.href = img.src;
+            link.download = "eDistrict_QRCode.png";
+            link.click();
+        } else {
+            alert("QR Code डाउनलोड करने में समस्या आ रही है।");
+        }
     }
 }
 </script>
