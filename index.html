@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UP e-District Direct By Bittu</title>
-    <!-- QR Code Library -->
+    <title>UP e-District Encoder Tool & Photo Viewer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
@@ -15,21 +14,33 @@
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
         }
+
+        /* दोनों बॉक्स को अगल-बगल रखने के लिए नया लेआउट */
+        .main-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            width: 100%;
+            max-width: 1100px;
+        }
+
         .container {
             background-color: white;
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 500px;
-            width: 100%;
+            flex: 1 1 400px; /* कम से कम 400px चौड़ाई लेगा */
             text-align: center;
         }
+        
         h2 {
             color: #333;
             margin-bottom: 25px;
+            font-size: 22px;
         }
         label {
             font-weight: bold;
@@ -74,7 +85,7 @@
             padding: 20px;
             background-color: #e9ecef;
             border-radius: 8px;
-            display: none; /* शुरुआत में छिपा रहेगा */
+            display: none;
             flex-direction: column;
             align-items: center;
             gap: 20px;
@@ -92,12 +103,18 @@
 
         .download-btn {
             background-color: #17a2b8;
+            color: white;
             width: auto;
             padding: 10px 25px;
             font-size: 16px;
+            text-decoration: none;
+            border-radius: 6px;
+            display: inline-block;
+            font-weight: bold;
         }
         .download-btn:hover {
             background-color: #138496;
+            color: white;
         }
 
         #qrcode {
@@ -106,33 +123,62 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
+        /* Photo Viewer Specific */
+        #certImage {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: none;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>e-District Verification Tool</h2>
-    
-    <label for="appNo">Application Number:</label>
-    <input type="text" id="appNo" placeholder="उदा: 261900010064472">
+<div class="main-wrapper">
 
-    <label for="certNo">Certificate Number:</label>
-    <input type="text" id="certNo" placeholder="उदा: 602261007721">
-
-    <button onclick="generateEverything()">Submit Details</button>
-
-    <!-- यहाँ सिर्फ Click Here बटन और QR Code दिखेगा -->
-    <div id="resultBox" class="result-layout">
-        <button class="secret-btn" id="secretBtn" onclick="openSecret()">Click Here</button>
+    <div class="container">
+        <h2>e-District Verification Tool</h2>
         
-        <div id="qrcode"></div>
-        
-        <button class="download-btn" onclick="downloadQR()">Download QR Code</button>
+        <label for="appNo">Application Number:</label>
+        <input type="text" id="appNo" placeholder="उदा: 261900010064472">
+
+        <label for="certNo">Certificate Number:</label>
+        <input type="text" id="certNo" placeholder="उदा: 602261007721">
+
+        <button onclick="generateEverything()">Submit Details</button>
+
+        <div id="resultBox" class="result-layout">
+            <button class="secret-btn" id="secretBtn" onclick="openSecret()">Click Here</button>
+            
+            <div id="qrcode"></div>
+            
+            <button class="download-btn" onclick="downloadQR()" style="border:none; cursor:pointer;">Download QR Code</button>
+        </div>
     </div>
+
+    <div class="container">
+        <h2>Certificate Photo Viewer</h2>
+        
+        <label for="photoAppNo">Application Number:</label>
+        <input type="text" id="photoAppNo" placeholder="उदा: 261900010064474">
+
+        <button onclick="fetchPhoto()" style="background-color: #ff9800;">Show Photo</button>
+
+        <div id="photoResultBox" class="result-layout">
+            <img id="certImage" src="" alt="Applicant Photo">
+            <a id="downloadPhotoBtn" href="#" class="download-btn" target="_blank">Download Photo</a>
+        </div>
+    </div>
+
 </div>
 
 <script>
-// छिपे हुए लिंक को स्टोर करने के लिए
+// ==========================================
+// 1. पुराने टूल की स्क्रिप्ट (बिना किसी बदलाव के)
+// ==========================================
 let hiddenUrlBase64 = "";
 
 function generateEverything() {
@@ -147,18 +193,13 @@ function generateEverything() {
     }
 
     try {
-        // दोनों नंबर को जोड़ना और Base64 में एन्कोड करना (आपका ओरिजिनल लॉजिक)
         let combinedText = appNo + "," + certNo;
         let encodedString = btoa(combinedText);
         let fullUrl = "https://edistrict.up.gov.in/edistrictup/certVerify.aspx?application_no=" + encodedString;
 
-        // लिंक को फिर से सुरक्षित/छिपाने के लिए Base64 में स्टोर करना
         hiddenUrlBase64 = btoa(fullUrl);
-
-        // पुराना QR Code साफ करना
         qrcodeDiv.innerHTML = "";
 
-        // नया QR Code बनाना
         new QRCode(qrcodeDiv, {
             text: fullUrl,
             width: 150,
@@ -168,7 +209,6 @@ function generateEverything() {
             correctLevel : QRCode.CorrectLevel.H
         });
 
-        // रिजल्ट बॉक्स को दिखाना
         resultBox.style.display = "flex";
     } catch (e) {
         alert("कुछ गड़बड़ हुई! कृपया सही नंबर डालें।");
@@ -176,7 +216,6 @@ function generateEverything() {
     }
 }
 
-// यह फ़ंक्शन लिंक को Popup Window में खोलेगा
 function openSecret() {
     if(!hiddenUrlBase64) return;
     
@@ -186,18 +225,14 @@ function openSecret() {
     window.open(url, "VerificationWindow", windowFeatures);
 }
 
-// QR Code डाउनलोड करने का फ़ंक्शन
 function downloadQR() {
-    // QR Code लाइब्रेरी canvas में इमेज बनाती है, हम उसी को डाउनलोड करवाएंगे
     let canvas = document.querySelector("#qrcode canvas");
-    
     if (canvas) {
         let link = document.createElement("a");
-        link.href = canvas.toDataURL("image/png"); // इमेज डेटा निकालना
-        link.download = "eDistrict_QRCode.png"; // डाउनलोड होने वाली फाइल का नाम
+        link.href = canvas.toDataURL("image/png");
+        link.download = "eDistrict_QRCode.png";
         link.click();
     } else {
-        // अगर पुराने ब्राउज़र में canvas की जगह <img> टैग बनता है
         let img = document.querySelector("#qrcode img");
         if (img && img.src) {
             let link = document.createElement("a");
@@ -208,6 +243,33 @@ function downloadQR() {
             alert("QR Code डाउनलोड करने में समस्या आ रही है।");
         }
     }
+}
+
+// ==========================================
+// 2. नए फोटो टूल की स्क्रिप्ट
+// ==========================================
+function fetchPhoto() {
+    let photoAppNo = document.getElementById("photoAppNo").value.trim();
+    let photoResultBox = document.getElementById("photoResultBox");
+    let certImage = document.getElementById("certImage");
+    let downloadPhotoBtn = document.getElementById("downloadPhotoBtn");
+
+    if (photoAppNo === "") {
+        alert("कृपया फोटो देखने के लिए Application Number डालें!");
+        return;
+    }
+
+    // फोटो का लिंक बनाना
+    let photoUrl = "https://edistrict.up.gov.in/edistrict/showphotoCert.aspx?appid=" + photoAppNo;
+
+    // फोटो और रिजल्ट बॉक्स को दिखाना
+    certImage.src = photoUrl;
+    certImage.style.display = "block";
+    photoResultBox.style.display = "flex";
+
+    // डाउनलोड बटन में लिंक सेट करना
+    downloadPhotoBtn.href = photoUrl;
+    downloadPhotoBtn.download = "Applicant_Photo_" + photoAppNo + ".jpg";
 }
 </script>
 
