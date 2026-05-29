@@ -19,7 +19,6 @@
             min-height: 100vh;
         }
 
-        /* दोनों बॉक्स को अगल-बगल रखने के लिए लेआउट */
         .main-wrapper {
             display: flex;
             flex-wrap: wrap;
@@ -80,7 +79,6 @@
             background-color: #0056b3;
         }
         
-        /* Result Area Design */
         .result-layout {
             margin-top: 30px;
             padding: 20px;
@@ -93,14 +91,8 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
         }
 
-        .secret-btn {
-            background-color: #28a745;
-            width: auto;
-            padding: 12px 30px;
-        }
-        .secret-btn:hover {
-            background-color: #218838;
-        }
+        .secret-btn { background-color: #28a745; width: auto; padding: 12px 30px; }
+        .secret-btn:hover { background-color: #218838; }
 
         .download-btn {
             background-color: #17a2b8;
@@ -108,15 +100,12 @@
             width: auto;
             padding: 10px 25px;
             font-size: 16px;
-            text-decoration: none;
             border-radius: 6px;
-            display: inline-block;
             font-weight: bold;
+            border: none;
+            cursor: pointer;
         }
-        .download-btn:hover {
-            background-color: #138496;
-            color: white;
-        }
+        .download-btn:hover { background-color: #138496; }
 
         #qrcode {
             background: white;
@@ -125,7 +114,6 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        /* Photo Viewer Specific */
         #certImage {
             max-width: 100%;
             height: auto;
@@ -140,10 +128,9 @@
 
 <div class="main-wrapper">
 
-    <!-- =========== Box 1: पुराना वाला Verification Tool =========== -->
+    <!-- =========== Box 1: e-District Verification =========== -->
     <div class="container">
         <h2>e-District Verification Tool</h2>
-        
         <label for="appNo">Application Number:</label>
         <input type="text" id="appNo" placeholder="उदा: 261900010064472">
 
@@ -154,17 +141,14 @@
 
         <div id="resultBox" class="result-layout">
             <button class="secret-btn" id="secretBtn" onclick="openSecret()">Click Here</button>
-            
             <div id="qrcode"></div>
-            
-            <button class="download-btn" onclick="downloadQR()" style="border:none; cursor:pointer;">Download QR Code</button>
+            <button class="download-btn" onclick="downloadQR()">Download QR Code</button>
         </div>
     </div>
 
-    <!-- =========== Box 2: Photo Viewer Tool =========== -->
+    <!-- =========== Box 2: Photo Viewer & ADVANCED Download =========== -->
     <div class="container">
         <h2>Certificate Photo Viewer</h2>
-        
         <label for="photoAppNo">Application Number:</label>
         <input type="text" id="photoAppNo" placeholder="उदा: 261900010064474">
 
@@ -172,16 +156,14 @@
 
         <div id="photoResultBox" class="result-layout">
             <img id="certImage" src="" alt="Applicant Photo">
-            <button id="downloadPhotoBtn" class="download-btn" onclick="forceDownloadPhoto()" style="border:none; cursor:pointer;">Download Photo</button>
+            <button id="downloadPhotoBtn" class="download-btn" onclick="forceDownloadPhoto()">Download Photo</button>
         </div>
     </div>
 
 </div>
 
 <script>
-// ==========================================
-// 1. पुराने टूल की स्क्रिप्ट (बिना किसी बदलाव के)
-// ==========================================
+// ================= Box 1 Script =================
 let hiddenUrlBase64 = "";
 
 function generateEverything() {
@@ -233,22 +215,10 @@ function downloadQR() {
         link.href = canvas.toDataURL("image/png");
         link.download = "eDistrict_QRCode.png";
         link.click();
-    } else {
-        let img = document.querySelector("#qrcode img");
-        if (img && img.src) {
-            let link = document.createElement("a");
-            link.href = img.src;
-            link.download = "eDistrict_QRCode.png";
-            link.click();
-        } else {
-            alert("QR Code डाउनलोड करने में समस्या आ रही है।");
-        }
     }
 }
 
-// ==========================================
-// 2. नए फोटो टूल की स्क्रिप्ट (ADVANCED DIRECT DOWNLOAD)
-// ==========================================
+// ================= Box 2 Script (ULTIMATE TRICK) =================
 let currentPhotoUrl = "";
 let currentPhotoAppNo = "";
 
@@ -270,46 +240,37 @@ function fetchPhoto() {
     photoResultBox.style.display = "flex";
 }
 
-// एडवांस लेवल डाउनलोड: 2 अलग-अलग API Proxies का इस्तेमाल
+// सबसे एडवांस: Base64 JSON Data URI ट्रिक
 function forceDownloadPhoto() {
     if (!currentPhotoUrl) return;
 
     let btn = document.getElementById("downloadPhotoBtn");
-    btn.innerText = "Downloading..."; // बटन पर लोडिंग दिखाएं
+    btn.innerText = "Downloading..."; 
 
-    // प्रॉक्सी जो फोटो (binary) को सीधे उठा सकते हैं
-    let proxy1 = "https://api.codetabs.com/v1/proxy?quest=" + currentPhotoUrl;
-    let proxy2 = "https://corsproxy.io/?" + encodeURIComponent(currentPhotoUrl);
+    // यह API फोटो को टेक्स्ट (Base64) में बदल कर ब्राउज़र को देती है
+    let proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(currentPhotoUrl);
 
-    // फेच करने का फंक्शन
-    function tryFetch(url) {
-        return fetch(url).then(res => {
-            if (!res.ok) throw new Error("Network Error");
-            return res.blob();
-        });
-    }
-
-    // पहले proxy1 ट्राई करें, फेल हो तो proxy2 ट्राई करें
-    tryFetch(proxy1)
-        .catch(() => tryFetch(proxy2)) 
-        .then(blob => {
-            // डायरेक्ट फाइल डाउनलोड का कोड
-            let blobUrl = window.URL.createObjectURL(blob);
-            let link = document.createElement("a");
-            link.href = blobUrl;
-            link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg"; 
-            document.body.appendChild(link);
-            link.click(); // ऑटोमैटिक क्लिक
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(blobUrl);
-            
-            btn.innerText = "Download Photo"; // बटन को वापस नॉर्मल कर दें
+    fetch(proxyUrl)
+        .then(response => response.json())
+        .then(data => {
+            // चेक कर रहे हैं कि सर्वर ने सही में इमेज दी है या नहीं
+            if (data.contents && data.contents.includes("data:image")) {
+                let link = document.createElement("a");
+                link.href = data.contents; // Base64 Data सीधा ब्राउज़र में
+                link.download = "Applicant_Photo_" + currentPhotoAppNo + ".jpg"; 
+                document.body.appendChild(link);
+                link.click(); // क्लिक करते ही बिना टैब खुले सेव!
+                document.body.removeChild(link);
+                btn.innerText = "Download Photo"; 
+            } else {
+                throw new Error("Govt Blocked");
+            }
         })
         .catch(error => {
-            console.error("Dono proxies fail ho gaye:", error);
-            // अगर सरकारी सर्वर पूरी तरह से ब्लॉक कर दे, तो यूजर को अलर्ट दें
-            alert("सुरक्षा कारणों से डायरेक्ट डाउनलोड ब्लॉक है! कृपया फोटो पर राइट-क्लिक करें (या मोबाइल में फोटो दबाकर रखें) और 'Save Image' चुनें।");
+            console.error("Error:", error);
             btn.innerText = "Download Photo";
+            // अगर यूपी सरकार का सर्वर इस ट्रिक को भी ब्लॉक कर दे (क्योंकि यह बाहरी API है)
+            alert("भाई, यूपी सरकार की सिक्योरिटी ने पीछे से डाउनलोड करने वाले रास्ते (API) को ब्लॉक कर दिया है। \n\n✅ 100% काम करने वाला देसी जुगाड़:\nमोबाइल में: स्क्रीन पर दिख रही फोटो को अपनी उंगली से दबा कर रखें (Long Press) और 'Download Image' चुन लें।\nकंप्यूटर में: फोटो पर Right Click करें और 'Save image as...' कर लें।");
         });
 }
 </script>
