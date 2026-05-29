@@ -125,18 +125,34 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             display: none;
             margin-bottom: 10px;
+            /* फोटो पर राईट क्लिक इनेबल करने के लिए कर्सर पॉइंटर */
+            cursor: pointer;
         }
 
-        /* ⚠️ यह हमारा नकली मेन्यू बॉक्स है जो असली राइट-क्लिक को छुपाएगा */
+        .instruction-box {
+            background-color: #e2e3e5;
+            color: #383d41;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* ⚠️ वार्निंग मैसेज का नया और बेहतर डिज़ाइन (Toast Notification) */
         #custom-menu {
             display: none;
-            position: absolute;
-            background: #333;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #dc3545;
             color: #fff;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 14px;
-            box-shadow: 0px 2px 10px rgba(0,0,0,0.5);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
             z-index: 999999;
             pointer-events: none;
         }
@@ -144,7 +160,7 @@
 </head>
 <body>
 
-<div id="custom-menu">सुरक्षा के कारण यह विकल्प बंद है।</div>
+<div id="custom-menu">⚠️ सुरक्षा के कारण यह विकल्प बंद है!</div>
 
 <div class="main-wrapper">
 
@@ -174,6 +190,9 @@
 
         <div id="photoResultBox" class="result-layout">
             <img id="certImage" src="" alt="Applicant Photo">
+            <div class="instruction-box">
+                👉 फोटो को सेव करने के लिए उस पर Right-Click या Long Press करें।
+            </div>
         </div>
     </div>
 
@@ -181,33 +200,34 @@
 
 <script>
 (function() {
-    // 1. डोमेन लॉक (ANTI-CLONE): अगर कोई तुम्हारी वेबसाइट कॉपी करेगा, तो उसका पेज काम नहीं करेगा
+    // 1. डोमेन लॉक: क्लोनिंग रोकने के लिए
     var allowedDomain = "peedhsr-sys.github.io";
     if (!window.location.hostname.includes(allowedDomain) && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-        document.body.innerHTML = "<h1 style='color:red; margin-top:100px; text-align:center;'>Error: Unauthorized Clone Detected! This website is illegal.</h1>";
-        window.location.href = "https://google.com"; // चोर को सीधा भगाओ
+        document.body.innerHTML = "<h1 style='color:red; margin-top:100px; text-align:center;'>Error: Unauthorized Clone Detected!</h1>";
+        window.location.href = "https://google.com";
         return;
     }
 
     var menu = document.getElementById('custom-menu');
 
-    // 2. नकली राइट-क्लिक मेन्यू (एक्सटेंशन को चकमा देने के लिए)
+    // 2. स्मार्ट राइट-क्लिक कंट्रोल (सिर्फ फोटो पर काम करेगा)
     document.addEventListener('contextmenu', function(e) {
+        // अगर क्लिक की गई चीज़ की ID "certImage" है (यानी हमारी फोटो), तो राइट-क्लिक होने दो
+        if (e.target && e.target.id === 'certImage') {
+            return true; 
+        }
+        
+        // अगर फोटो के अलावा कहीं और राइट-क्लिक हुआ है, तो ब्लॉक कर दो और मैसेज दिखाओ
         e.preventDefault();
         e.stopPropagation();
         
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-        menu.style.display = 'block';
+        menu.style.display = 'block'; // मैसेज दिखाओ
         
+        // 2.5 सेकंड बाद मैसेज को छुपा दो
         setTimeout(function() {
             menu.style.display = 'none';
-        }, 2000);
+        }, 2500);
     }, true);
-
-    document.addEventListener('click', function() {
-        menu.style.display = 'none';
-    });
 
     // 3. शॉर्टकट्स को रोकना (F12, Ctrl+Shift+I, Ctrl+U)
     document.addEventListener('keydown', function(e) {
@@ -222,7 +242,7 @@
         }
     }, true);
 
-    // 4. डिबगर फ्रीज लूप (अगर कोई हैकिंग टूल खोलेगा तो ब्राउज़र हैंग हो जाएगा)
+    // 4. डिबगर फ्रीज लूप
     setInterval(function() {
         debugger;
     }, 100);
